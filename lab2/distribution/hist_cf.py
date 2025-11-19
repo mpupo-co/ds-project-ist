@@ -13,7 +13,8 @@ data = pd.read_csv(filename, index_col=index)
 summary5: DataFrame = data.describe(include="all")
 summary5.to_csv(f"tables/{file_tag}_dataset_summary.csv")
 
-
+def truncate_cat(x, max_len=15):
+    return x if len(x) <= max_len else x[:12] + "..."
 
 from matplotlib.pyplot import savefig, figure, tight_layout, subplots
 from dslabs_functions import get_variable_types
@@ -67,7 +68,7 @@ if [] != symbolic:
     for n in range(len(symbolic)):
         counts: Series = data[symbolic[n]].value_counts()
         plot_bar_chart(
-            counts.index.to_list(),
+            [truncate_cat(str(c)) for c in counts.index],
             counts.to_list(),
             ax=axs[i, j],
             title="Histogram for %s" % symbolic[n],

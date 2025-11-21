@@ -35,7 +35,7 @@ variables_types: dict[str, list] = get_variable_types(data)
 numeric: list[str] = variables_types["numeric"]
 
 #---------Numeric Variables Histograms----------
-
+'''
 from dslabs_functions import set_chart_labels
 if [] != numeric:
     rows = 6
@@ -59,7 +59,7 @@ if [] != numeric:
     savefig(f"images/{file_tag}_single_histograms_numeric.png")
 else:
     print("There are no numeric variables.")
-
+'''
 #---------Symbolic Variables Histograms----------
 
 from dslabs_functions import plot_bar_chart
@@ -69,10 +69,10 @@ symbolic: list[str] = variables_types["symbolic"] + variables_types["binary"]
 if target in symbolic:
     symbolic.remove(target)
 if [] != symbolic:
-    rows = 6
-    cols = 3
+    rows = 4
+    cols = 4
     fig, axs = subplots(
-        rows, cols, figsize=(cols * 6, rows * 4), squeeze=False
+        rows, cols, figsize=(cols * 5, rows * 5), squeeze=False
     )
     i, j = 0, 0
     for n in range(len(symbolic)):

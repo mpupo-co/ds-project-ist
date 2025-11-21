@@ -147,8 +147,8 @@ def plot_bar_chart(
         color=FILL_COLOR,
         tick_label=xvalues,
     )
-    format = "%.2f" if percentage else "%.0f"
-    ax.bar_label(values, fmt=format, fontproperties=FONT_TEXT)
+    # format = "%.2f" if percentage else "%.0f"
+    # ax.bar_label(values, fmt=format, fontproperties=FONT_TEXT)
 
     return ax
 

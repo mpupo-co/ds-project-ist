@@ -152,6 +152,26 @@ def plot_nr_missing_values(dfs: list[DataFrame], file_tag: str, save=False) -> N
         fig.savefig(f"{file_tag}images/nr_missing_values.png")
         fig.savefig(f"{file_tag}images/nr_missing_values.eps", format="eps")
 
+def remove_ID_columns(dfs: list[DataFrame]) -> list[DataFrame]:
+    print("Removing ID columns from Domain 2 dataset...")
+    for i in range(len(dfs)):
+        cols_to_remove: list[str] = [col for col in dfs[i].columns if 'ID' in col]
+        if cols_to_remove:
+            dfs[i] = dfs[i].drop(columns=cols_to_remove, errors='ignore')
+            print(f'New shape of Domain {i+1} dataset: {dfs[i].shape}')
+    return dfs
+
+def remove_constant_columns(dfs: list[DataFrame]) -> list[DataFrame]:
+    print("Removing constant columns from datasets...")
+    for i in range(len(dfs)):
+        nunique = dfs[i].nunique()
+        constant_columns = nunique[nunique == 1].index.tolist()
+        if constant_columns:
+            print(f"Removing constant columns from Domain {i+1} dataset: {constant_columns}")
+            dfs[i] = dfs[i].drop(columns=constant_columns)
+            print(f'New shape of Domain {i+1} dataset: {dfs[i].shape}')
+    return dfs
+
 def get_correlation_matrix(df: DataFrame) -> DataFrame:
     variable_types: dict[str, list] = get_variable_types(df)
     numeric: list[str] = variable_types["numeric"]
@@ -170,7 +190,7 @@ def plot_correlation_matrices(dfs: list[DataFrame], file_tag: str, save=False) -
             corr_mtx,
             xticklabels=numeric,
             yticklabels=numeric,
-            annot=False,
+            annot=True if len(numeric) <= 12 else False,
             cmap="Blues",
             vmin=0,
             vmax=1,
@@ -183,14 +203,22 @@ def plot_correlation_matrices(dfs: list[DataFrame], file_tag: str, save=False) -
             fig.savefig(f"{file_tag}images/correlation_analysis_domain{i+1}.png")
             fig.savefig(f"{file_tag}images/correlation_analysis_domain{i+1}.eps", format="eps")
 
+def dimensionality_analysis(dfs: list[DataFrame], file_tag: str) -> None:
+    plot_nr_variables(dfs, file_tag, save=True)
+    plot_variable_types(dfs, file_tag, save=True)
+    plot_nr_missing_values(dfs, file_tag, save=True)
+
+def correlation_analysis(dfs: list[DataFrame], file_tag: str) -> None:
+    dfs = remove_ID_columns(dfs)
+    dfs = remove_constant_columns(dfs)
+    plot_correlation_matrices(dfs, file_tag, save=True)
+
 def main() -> None:
     filenames = ["lab2/data/traffic_accidents.csv", "lab2/data/Combined_Flights_2022.csv"]
     file_tag = "lab2/"
     dfs = load_datasets(filenames)
-    plot_nr_variables(dfs, file_tag, save=True)
-    plot_variable_types(dfs, file_tag, save=True)
-    plot_nr_missing_values(dfs, file_tag, save=True)
-    plot_correlation_matrices(dfs, file_tag, save=True)
+    dimensionality_analysis(dfs, file_tag)
+    correlation_analysis(dfs, file_tag)
 
 if __name__ == "__main__":
     main()

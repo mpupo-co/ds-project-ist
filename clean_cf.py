@@ -17,9 +17,11 @@ cols_to_drop = data.columns[
     ) |
     data.columns.str.contains('Tail', case=False) |
     (data.nunique()<=1) # colunas com todos os valores iguais
-].tolist() + ['Origin', 'Dest']
+].tolist() + ['Origin', 'Dest', 'OriginState', 'DestState']  
 
 data = data.drop(columns=cols_to_drop)
+sample=data.sample(frac=0.01, replace=False, random_state=42)
 
 # ---- Save cleaned dataset ----
 data.to_csv('datasets/'+file_tag+'_clean.csv')
+sample.to_csv('datasets/'+file_tag+'_clean_sample.csv') 

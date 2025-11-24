@@ -17,9 +17,9 @@ cols_to_drop = data.columns[
     ) |
     data.columns.str.contains('Tail', case=False) |
     (data.nunique()<=1) # colunas com todos os valores iguais
-]
+].tolist() + ['Origin', 'Dest']
 
 data = data.drop(columns=cols_to_drop)
 
 # ---- Save cleaned dataset ----
-data.to_csv(file_tag+'_clean.csv')
+data.to_csv('datasets/'+file_tag+'_clean.csv')

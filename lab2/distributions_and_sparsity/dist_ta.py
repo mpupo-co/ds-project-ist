@@ -1,5 +1,6 @@
 import pandas as pd 
 from pandas import DataFrame, read_csv
+from dslabs_functions import get_variable_types
 
 def truncate_cat(x, max_len=15):
     return x if len(x) <= max_len else x[:12] + "..."
@@ -13,12 +14,20 @@ index = 'crash_date'
 data = pd.read_csv(filename, index_col=index)
 
 
+variables_types: dict[str, list] = get_variable_types(data)
+numeric = variables_types["numeric"]
+symbolic = variables_types["symbolic"]
+
+move_cols = ['crash_hour', 'crash_day_of_week', 'crash_month']
+# move move_cols from numeric → symbolic
+for var in move_cols:
+    numeric.remove(var)
+    symbolic.append(var)
+
 #---------Global Numeric Variables Boxplot----------
 from matplotlib.pyplot import savefig, figure, tight_layout, subplots
-from dslabs_functions import get_variable_types
 
-variables_types: dict[str, list] = get_variable_types(data)
-numeric: list[str] = variables_types["numeric"]
+
 if [] != numeric:
     fig, ax = subplots(figsize=(10, 6))
     data[numeric].boxplot(rot=45, ax=ax)
@@ -33,8 +42,6 @@ from matplotlib.figure import Figure
 from matplotlib.pyplot import savefig, subplots, figure
 from dslabs_functions import define_grid, HEIGHT, get_variable_types
 
-variables_types: dict[str, list] = get_variable_types(data)
-numeric: list[str] = variables_types["numeric"]
 if [] != numeric:
     rows: int
     cols: int
@@ -47,7 +54,7 @@ if [] != numeric:
     i, j = 0, 0
     for n in range(len(numeric)):
         axs[i, j].set_title("Boxplot for %s" % numeric[n])
-        axs[i, j].boxplot(data[numeric[n]].dropna().values, whis=1.5)
+        axs[i, j].boxplot(data[numeric[n]].dropna().values, whis=19)
         i, j = (i + 1, 0) if (n + 1) % cols == 0 else (i, j + 1)
     savefig(f"images/{file_tag}_single_boxplots.png")
 else:
@@ -56,7 +63,7 @@ else:
 #---------Outliers Analysis----------
 from dslabs_functions import count_outliers, plot_multibar_chart
 if [] != numeric:
-    outliers = count_outliers(data, numeric, nrstdev=2, iqrfactor=1.5)
+    outliers = count_outliers(data, numeric, nrstdev=2, iqrfactor=19)
     iqr_out = outliers["iqr"]
     stdev_out = outliers["stdev"]
 
@@ -117,7 +124,7 @@ else:
 from dslabs_functions import plot_bar_chart
 from pandas import Series
 
-symbolic: list[str] = variables_types["symbolic"] + variables_types["binary"]
+symbolic = symbolic + variables_types["binary"]
 if target in symbolic:
     symbolic.remove(target)
 if [] != symbolic:

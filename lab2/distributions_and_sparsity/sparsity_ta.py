@@ -1,8 +1,5 @@
-from numpy import ndarray
 from pandas import read_csv, DataFrame
-from matplotlib.figure import Figure
-from matplotlib.pyplot import figure, subplots, savefig, show
-from dslabs_functions import HEIGHT, plot_multi_scatters_chart
+from dslabs_functions import get_variable_types
 
 filename = 'datasets/traffic_accidents.csv'
 file_tag = 'traffic_accidents'
@@ -26,7 +23,17 @@ def truncate_df_strings(df, max_len=12):
 data = truncate_df_strings(data, max_len=12)
 data = data.dropna()
 
+variables_types: dict[str, list] = get_variable_types(data)
+numeric = variables_types["numeric"]
+symbolic = variables_types["symbolic"]
+binary = variables_types["binary"]
+
+move_cols = ['crash_hour', 'crash_day_of_week', 'crash_month']
+# move move_cols from numeric → symbolic
+for var in move_cols:
+    numeric.remove(var)
+    symbolic.append(var)
 
 from sparsity_plot import plot_sparsity_matrix
 
-plot_sparsity_matrix(data, file_tag=file_tag)
+plot_sparsity_matrix(data, file_tag, numeric, symbolic, binary)

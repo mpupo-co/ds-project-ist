@@ -2,24 +2,13 @@ import pandas as pd
 from pandas import DataFrame, read_csv
 
 #----------Load dataset----------
-filename = 'datasets/Combined_Flights_2022.csv'
+filename = 'datasets/Combined_Flights_2022_clean.csv'
 file_tag = 'Combined_Flights_2022'
 
 target = 'Cancelled'
 index = 'FlightDate'
 data = pd.read_csv(filename, index_col=index)
 
-cols_to_drop = data.columns[
-    data.columns.str.contains('ID', case=False) |
-    data.columns.str.contains('Flight_Num', case=False) |
-    data.columns.str.contains('Code', case=False) |
-    data.columns.to_series().apply(
-        lambda col: any(f'Div{i}' in col for i in range(1, 6))
-    ) |
-    data.columns.str.contains('Tail', case=False)
-]
-
-data = data.drop(columns=cols_to_drop)
 
 def truncate_cat(x, max_len=15):
     return x if len(x) <= max_len else x[:12] + "..."
@@ -32,14 +21,20 @@ from matplotlib.pyplot import savefig,  subplots, figure
 from dslabs_functions import define_grid, HEIGHT, get_variable_types
 
 variables_types: dict[str, list] = get_variable_types(data)
-numeric: list[str] = variables_types["numeric"]
+numeric = variables_types["numeric"]
+symbolic = variables_types["symbolic"]
+
+move_cols = data.columns[data.columns.str.contains('Group', case=False)].tolist() + ['Quarter', 'Month', 'DayofMonth', 'DayOfWeek']
+# move move_cols from numeric → symbolic
+for var in move_cols:
+    numeric.remove(var)
+    symbolic.append(var)
 
 #---------Numeric Variables Histograms----------
-'''
+
 from dslabs_functions import set_chart_labels
 if [] != numeric:
-    rows = 6
-    cols = 5
+    rows, cols = define_grid(len(numeric))
     fig, axs = subplots(
         rows, cols, figsize=(cols * 5, rows * 5), squeeze=False
     )
@@ -59,18 +54,16 @@ if [] != numeric:
     savefig(f"images/{file_tag}_single_histograms_numeric.png")
 else:
     print("There are no numeric variables.")
-'''
 #---------Symbolic Variables Histograms----------
 
 from dslabs_functions import plot_bar_chart
 from pandas import Series
 
-symbolic: list[str] = variables_types["symbolic"] + variables_types["binary"]
+symbolic = symbolic + variables_types["binary"]
 if target in symbolic:
     symbolic.remove(target)
 if [] != symbolic:
-    rows = 4
-    cols = 4
+    rows, cols = define_grid(len(symbolic))
     fig, axs = subplots(
         rows, cols, figsize=(cols * 5, rows * 5), squeeze=False
     )

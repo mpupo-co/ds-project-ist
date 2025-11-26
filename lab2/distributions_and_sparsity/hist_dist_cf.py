@@ -13,50 +13,32 @@ def truncate_cat(x, max_len=15):
     return x if len(x) <= max_len else x[:12] + "..."
 
 #----------Load dataset----------
-filename = 'datasets/Combined_Flights_2022.csv'
+filename = 'datasets/Combined_Flights_2022_clean.csv'
 file_tag = 'Combined_Flights_2022'
 
 target = 'Cancelled'
 index = 'FlightDate'
 data = pd.read_csv(filename, index_col=index)
 data = data.sample(frac=0.01, replace=False)
-cols_to_drop = data.columns[
-    data.columns.str.contains('ID', case=False) |
-    data.columns.str.contains('Flight_Num', case=False) |
-    data.columns.str.contains('Code', case=False) |
-    data.columns.to_series().apply(
-        lambda col: any(f'Div{i}' in col for i in range(1, 6))
-    ) |
-    data.columns.str.contains('Tail', case=False)
-]
-
-#print(cols_to_drop)
-data = data.drop(columns=cols_to_drop)
 
 variables_types: dict[str, list] = get_variable_types(data)
-numeric: list[str] = variables_types["numeric"]
+numeric = variables_types["numeric"]
+symbolic = variables_types["symbolic"]
 
-# choose which numeric vars you want distributions for
-vars_with_dists = ["CRCDepTime", "DepTime","ArrTime", "AirTime", "CRSElapsedTime", "ActualElapsedTime", "Distance", "WheelsOff", "WheelsOn", "CRSArrTime", "ArrDelay", "ArrivalDelayGoups", "TaxiIn", "TaxiOut"] 
+move_cols = data.columns[data.columns.str.contains('Group', case=False)].tolist() + ['Quarter', 'Month', 'DayofMonth', 'DayOfWeek']
+# move move_cols from numeric → symbolic
+for var in move_cols:
+    numeric.remove(var)
+    symbolic.append(var)
 
 if [] != numeric:
-    rows = 6
-    cols = 5
+    rows, cols = define_grid(len(numeric))
     fig, axs = subplots(
-        rows, cols, figsize=(cols * 5, rows * 5), squeeze=False
+        rows, cols, figsize=(cols * HEIGHT, rows * HEIGHT), squeeze=False
     )
     i, j = 0, 0
     for n in range(len(numeric)):
-        if numeric[n] in vars_with_dists:
-            histogram_with_distributions(axs[i, j], data[numeric[n]].dropna(), numeric[n])
-        else:
-            set_chart_labels(
-            axs[i, j],
-            title=f"Histogram for {numeric[n]}",
-            xlabel=numeric[n],
-            ylabel="nr records",
-        )
-            axs[i, j].hist(data[numeric[n]].dropna().values, "auto")
+        histogram_with_distributions(axs[i, j], data[numeric[n]].dropna(), numeric[n])
         i, j = (i + 1, 0) if (n + 1) % cols == 0 else (i, j + 1)
     savefig(f"images/{file_tag}_histogram_numeric_distribution.png")
 else:

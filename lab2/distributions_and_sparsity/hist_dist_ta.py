@@ -22,10 +22,14 @@ data = pd.read_csv(filename, index_col=index)
 data = data.sample(frac=0.05, replace=False)
 
 variables_types: dict[str, list] = get_variable_types(data)
-numeric: list[str] = variables_types["numeric"]
+numeric = variables_types["numeric"]
+symbolic = variables_types["symbolic"]
 
-# choose which numeric vars you want distributions for
-vars_with_dists = ["num_units", "injuries_total", "injuries_no_indication", "crash_hour"]
+move_cols = ['crash_hour', 'crash_day_of_week', 'crash_month']
+# move move_cols from numeric → symbolic
+for var in move_cols:
+    numeric.remove(var)
+    symbolic.append(var)
 
 if [] != numeric:
     rows, cols = define_grid(len(numeric))
@@ -34,16 +38,7 @@ if [] != numeric:
     )
     i, j = 0, 0
     for n in range(len(numeric)):
-        if numeric[n] in vars_with_dists:
-            histogram_with_distributions(axs[i, j], data[numeric[n]].dropna(), numeric[n])
-        else:
-            set_chart_labels(
-            axs[i, j],
-            title=f"Histogram for {numeric[n]}",
-            xlabel=numeric[n],
-            ylabel="nr records",
-        )
-            axs[i, j].hist(data[numeric[n]].dropna().values, "auto")
+        histogram_with_distributions(axs[i, j], data[numeric[n]].dropna(), numeric[n])
         i, j = (i + 1, 0) if (n + 1) % cols == 0 else (i, j + 1)
     savefig(f"images/{file_tag}_histogram_numeric_distribution.png")
 else:

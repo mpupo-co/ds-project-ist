@@ -31,24 +31,20 @@ test: DataFrame = concat(
 eval_metric = "recall"
 
 # Study
-
+'''
 figure(figsize=(2 * HEIGHT, HEIGHT))
-study_variance_for_feature_selection(
+study_redundancy_for_feature_selection(
     train,
     test,
     target=target,
-    max_threshold=0.5,
-    lag=0.005,
+    min_threshold=0.1,
+    lag=0.05,
     metric=eval_metric,
     file_tag=file_tag,
 )
+
 '''
-# Apllicance
-print("Original variables", train.columns.values)
-vars2drop: list[str] = select_redundant_variables(
-    train, target=target, min_threshold=0.1
-)
-print("Variables to drop (redundant)", vars2drop)
+# Apllication
 
 vars2drop: list[str] = select_redundant_variables(
     train, min_threshold=0.7, target=target
@@ -60,14 +56,27 @@ train_cp, test_cp = apply_feature_selection(
 figure()
 eval: dict[str, list] = evaluate_approach(train_cp, test_cp, target=target, metric="recall")
 plot_multibar_chart(
-    ["NB", "KNN"], eval, title=f"{file_tag} eval. (drop redund - min thr = 0.1)", percentage=True
+    ["NB", "KNN"], eval, title=f"{file_tag} eval. (drop redund - min thr = 0.7)", percentage=True
 )
-savefig(f"images/{file_tag}_eval_feature_redund.png")
+savefig(f"images/{file_tag}_eval_feature_redund0.7.png")
 
 # ----------------------------------------------
 # ---- Feature selection based on relevance ----
 # ----------------------------------------------
+'''
+# Study
+figure(figsize=(2 * HEIGHT, HEIGHT))
+study_variance_for_feature_selection(
+    train,
+    test,
+    target=target,
+    max_threshold=0.2,
+    lag=0.02,
+    metric=eval_metric,
+    file_tag=file_tag,
+)
 
+# Aplication
 vars2drop: list[str] = select_low_variance_variables(
     train, max_threshold=0.02, target=target
 )

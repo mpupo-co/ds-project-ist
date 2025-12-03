@@ -23,47 +23,74 @@ vars = data.columns.to_list()
 # ----------------------------------
 
 def random_forests_study(
-    trnX: ndarray,
-    trnY: array,
-    tstX: ndarray,
-    tstY: array,
+    trnX,
+    trnY,
+    tstX,
+    tstY,
     nr_max_trees: int = 2500,
     lag: int = 500,
     metric: str = "accuracy",
-) -> tuple[RandomForestClassifier | None, dict]:
-    n_estimators: list[int] = [100] + [i for i in range(500, nr_max_trees + 1, lag)]
-    max_depths: list[int] = [2, 5, 7]
-    max_features: list[float] = [0.1, 0.3, 0.5, 0.7, 0.9]
+):
+    # Search space (unchanged)
+    n_estimators_list = [100] + [i for i in range(500, nr_max_trees + 1, lag)]
+    max_depths = [2, 5, 7]
+    max_features_list = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    best_model: RandomForestClassifier | None = None
-    best_params: dict = {"name": "RF", "metric": metric, "params": ()}
-    best_performance: float = 0.0
+    # Prepare tracking
+    best_model = None
+    best_params = {"name": "RF", "metric": metric, "params": ()}
+    best_performance = 0.0
 
-    values: dict = {}
-
-    cols: int = len(max_depths)
+    # Plot containers
+    cols = len(max_depths)
     _, axs = subplots(1, cols, figsize=(cols * HEIGHT, HEIGHT), squeeze=False)
-    for i in range(len(max_depths)):
-        d: int = max_depths[i]
+
+    for i, d in enumerate(max_depths):
         values = {}
-        for f in max_features:
-            y_tst_values: list[float] = []
-            for n in n_estimators:
-                clf = RandomForestClassifier(
-                    n_estimators=n, max_depth=d, max_features=f
-                )
-                clf.fit(trnX, trnY)
-                prdY: array = clf.predict(tstX)
-                eval: float = CLASS_EVAL_METRICS[metric](tstY, prdY)
-                y_tst_values.append(eval)
-                if eval - best_performance > DELTA_IMPROVE:
-                    best_performance = eval
-                    best_params["params"] = (d, f, n)
+
+        for f in max_features_list:
+            perf_line = []
+
+            # Initialize model ONCE per (depth, feature)
+            clf = RandomForestClassifier(
+                n_estimators=n_estimators_list[0],
+                max_depth=d,
+                max_features=f,
+                n_jobs=-1,
+                warm_start=True,     # <---- Key speed boost
+            )
+            clf.fit(trnX, trnY)
+
+            # Evaluate initial size
+            prdY = clf.predict(tstX)
+            score = CLASS_EVAL_METRICS[metric](tstY, prdY)
+            perf_line.append(score)
+
+            if score > best_performance + DELTA_IMPROVE:
+                best_performance = score
+                best_model = clf
+                best_params["params"] = (d, f, n_estimators_list[0])
+
+            # Extend forest instead of retraining from scratch
+            for n in n_estimators_list[1:]:
+                clf.n_estimators = n   # add trees incrementally
+                clf.fit(trnX, trnY)    # only new trees trained
+
+                prdY = clf.predict(tstX)
+                score = CLASS_EVAL_METRICS[metric](tstY, prdY)
+                perf_line.append(score)
+
+                # Track best
+                if score > best_performance + DELTA_IMPROVE:
+                    best_performance = score
                     best_model = clf
-                # print(f'RF d={d} f={f} n={n}')
-            values[f] = y_tst_values
+                    best_params["params"] = (d, f, n)
+
+            values[f] = perf_line
+
+        # Plot
         plot_multiline_chart(
-            n_estimators,
+            n_estimators_list,
             values,
             ax=axs[0, i],
             title=f"Random Forests with max_depth={d}",
@@ -71,11 +98,12 @@ def random_forests_study(
             ylabel=metric,
             percentage=True,
         )
+
     print(
         f'RF best for {best_params["params"][2]} trees (d={best_params["params"][0]} and f={best_params["params"][1]})'
     )
-    return best_model, best_params
 
+    return best_model, best_params
 
 # ---------- Train-test split ----------
 

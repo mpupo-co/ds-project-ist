@@ -24,7 +24,7 @@ cols_to_drop = data.columns[
     data.columns.str.contains('Tail', case=False) |
     (data.isna().sum() > 0) |  # columns with missing values
     (data.nunique()<=1) # colunas com todos os valores iguais
-].tolist() + ['Origin', 'Dest', 'OriginStateName', 'DestStateName', 'Operating_Airline'] # dropping columns with redundant information
+].tolist() + ['OriginStateName', 'DestStateName', 'Operating_Airline'] # dropping columns with redundant information
 
 data = data.drop(columns=cols_to_drop)
 # format time variables to hh:mm

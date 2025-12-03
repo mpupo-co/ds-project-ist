@@ -42,8 +42,6 @@ df_zscore: DataFrame = DataFrame(
 # Add *unscaled* target back
 df_zscore[target] = target_data
 
-# If you want to save it:
-# df_zscore.to_csv(f"data/{file_tag}_scaled_zscore.csv", index=index)
 
 # Split X and y
 y: array = df_zscore[target].to_list()
@@ -103,7 +101,7 @@ df_minmax: DataFrame = DataFrame(
 # Add *unscaled* target back
 df_minmax[target] = target_data
 
-#df_minmax.to_csv(f"datasets/{file_tag}_encoded_scaled.csv", index=index)
+df_minmax.to_csv(f"datasets/{file_tag}_encoded_scaled.csv", index=index)
 
 # Split X and y explicitly
 y: array = df_minmax[target].to_list()

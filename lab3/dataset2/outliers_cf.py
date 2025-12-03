@@ -19,9 +19,6 @@ index = 'FlightDate'
 target = 'Cancelled'
 data = pd.read_csv(filename, index_col=index)
 
-print(f"Original data: {data.shape}")
-
-
 n_std: int = NR_STDEV
 
 numeric_vars = ['Distance', 'CRSElapsedTime']
@@ -36,11 +33,11 @@ summary5: DataFrame = data[numeric_vars].describe()
 if [] != numeric_vars:
     df: DataFrame = data.copy(deep=True)
     for var in numeric_vars:
-        top, bottom = determine_outlier_thresholds_for_var(summary5[var], std_based=False, threshold=5)
+        top, bottom = determine_outlier_thresholds_for_var(summary5[var], std_based=False, threshold=7)
         median: float = df[var].median()
         df[var] = df[var].apply(lambda x: median if x > top or x < bottom else x)
     #df.to_csv(f"datasets/{file_tag}_replacing_outliers.csv", index=True)
-    print("Data after replacing outliers:", df.shape)
+    #print("Data after replacing outliers:", df.shape)
     #print(df.describe())
 else:
     print("There are no numeric variables")
@@ -76,12 +73,12 @@ if numeric_vars is not None:
     summary5: DataFrame = data[numeric_vars].describe()
     for var in numeric_vars:
         top_threshold, bottom_threshold = determine_outlier_thresholds_for_var(
-            summary5[var], std_based=False, threshold=5
+            summary5[var], std_based=False, threshold=7
         )
         outliers: Series = df[(df[var] > top_threshold) | (df[var] < bottom_threshold)]
         df.drop(outliers.index, axis=0, inplace=True)
     #df.to_csv(f"data/{file_tag}_drop_outliers.csv", index=True)
-    print(f"Data after dropping outliers: {df.shape}")
+    #print(f"Data after dropping outliers: {df.shape}")
 else:
     print("There are no numeric variables")
 
@@ -104,3 +101,26 @@ plot_multibar_chart(
     ["NB", "KNN"], eval, title=f"{file_tag} evaluation (drop outliers)", percentage=True
 )
 savefig(f"images/{file_tag}_eval_out_drop.png")
+
+# --------------------------------------------
+# ---- BASELINE-Original Dataset training ----
+# --------------------------------------------
+y: array = data.pop(target).to_list()
+X: ndarray = data.values
+trnX, tstX, trnY, tstY = train_test_split(X, y, train_size=0.7, stratify=y, random_state=42)
+
+train: DataFrame = concat(
+    [DataFrame(trnX, columns=data.columns), DataFrame(trnY, columns=[target])], axis=1
+)
+
+test: DataFrame = concat(
+    [DataFrame(tstX, columns=data.columns), DataFrame(tstY, columns=[target])], axis=1
+)
+
+figure()
+eval: dict[str, list] = evaluate_approach(train, test, target=target, metric="recall")
+plot_multibar_chart(
+    ["NB", "KNN"], eval, title=f"{file_tag} evaluation (baseline)", percentage=True
+)
+savefig(f"images/{file_tag}_eval_baseline.png")
+

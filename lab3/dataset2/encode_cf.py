@@ -1,8 +1,5 @@
 import pandas as pd 
-from numpy import ndarray, array
-from pandas import read_csv, DataFrame, concat
-from sklearn.model_selection import train_test_split
-from dslabs_functions import get_variable_types, dummify, mvi_by_filling
+from dslabs_functions import dummify
 
 
 # ---- Load dataset ----
@@ -16,11 +13,16 @@ data = pd.read_csv(filename, index_col=index)
 
 '''
 Econde variables include:
- geographic variables (cities and states names): 'OriginCityName', 'OriginState', 'DestCityName', 'DestState'
- time variables (hh:mm): 'CRSDepTime', 'CRSArrTime'
- ailines companies: Airline
- time blocks: 'DepTimeBlk', 'ArrTimeBlk'
- day of week: 'DayOfWeek'
+ 1. Ordinal+logic encoding:
+    - geographic variables (cities and states names): 'OriginCityName', 'OriginState', 'DestCityName', 'DestState'
+ 2. Cyclic encoding
+    - time variables (hh:mm): 'CRSDepTime', 'CRSArrTime'
+    - time blocks: 'DepTimeBlk', 'ArrTimeBlk'
+    - day of week: 'DayOfWeek'
+ 3. One-hot encoding:
+    - airlines companies: 'Airline'
+ 4. Frequency encoding
+    - airports: 'Origin', 'Dest'
 '''
 
 # ---- Encode geographic variables ----
@@ -227,9 +229,17 @@ for var in encode_cyclic.keys():
     data[var + '_cos'] = data[var].apply(lambda x: cos(x) if pd.notnull(x) else x)
     data = data.drop(columns=[var])
 
-# ---- Dummify variables ----
+# ---- Dummify 'Airline' variables ----
 data = dummify(data, ['Airline'])
 
-# ---- Save encoded dataset ----
-data.to_csv('datasets/'+file_tag+'_encoded.csv', index=index)
 
+# ---- Frequency Encoding for Dest, Origin ----
+airports = ['Origin', 'Dest']
+for col in airports:
+    freq = data[col].value_counts(normalize=True)  # frequência relativa
+    data[col + '_freq'] = data[col].map(freq)
+data = data.drop(columns=airports)
+
+# ---- Save encoded dataset ----
+data.to_csv('datasets/'+file_tag+'_encoded.csv', index=True)
+print (data.shape)

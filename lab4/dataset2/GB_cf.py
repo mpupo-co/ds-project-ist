@@ -163,7 +163,8 @@ for f in range(len(vars)):
     imp_values.append(importances[indices[f]])
     print(f"{f+1}. {elems[f]} ({importances[indices[f]]})")
 
-figure()
+from matplotlib.pyplot import tight_layout
+figure(figure(figsize=(8,5)))
 plot_horizontal_bar_chart(
     elems,
     imp_values,
@@ -173,6 +174,7 @@ plot_horizontal_bar_chart(
     ylabel="variables",
     percentage=True,
 )
+tight_layout()
 savefig(f"images/{file_tag}_gb_{eval_metric}_vars_ranking.png")
 
 # ---------- Overfitting study ----------

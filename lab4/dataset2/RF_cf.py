@@ -135,6 +135,7 @@ savefig(f'images/{file_tag}_{params["name"]}_best_{params["metric"]}_eval.png')
 
 from numpy import std, argsort
 from dslabs_functions import plot_horizontal_bar_chart
+from matplotlib.pyplot import tight_layout
 
 stdevs: list[float] = list(
     std([tree.feature_importances_ for tree in best_model.estimators_], axis=0)
@@ -148,7 +149,7 @@ for f in range(len(vars)):
     imp_values.append(importances[indices[f]])
     print(f"{f+1}. {elems[f]} ({importances[indices[f]]})")
 
-figure()
+figure(figsize=(8,5))
 plot_horizontal_bar_chart(
     elems,
     imp_values,
@@ -158,6 +159,7 @@ plot_horizontal_bar_chart(
     ylabel="variables",
     percentage=True,
 )
+tight_layout() 
 savefig(f"images/{file_tag}_rf_{eval_metric}_vars_ranking.png")
 
 # ---------- Overfitting study ----------

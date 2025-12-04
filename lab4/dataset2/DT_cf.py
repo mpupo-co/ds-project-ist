@@ -71,6 +71,7 @@ plot_evaluation_results(params, trnY, prd_trn, tstY, prd_tst, labels)
 savefig(f'images/{file_tag}_{params["name"]}_best_{params["metric"]}_eval.png')
 
 # ---------- Variables importance ------------
+from matplotlib.pyplot import tight_layout
 importances = best_model.feature_importances_
 indices: list[int] = argsort(importances)[::-1]
 elems: list[str] = []
@@ -80,7 +81,7 @@ for f in range(len(vars)):
     imp_values += [importances[indices[f]]]
     print(f"{f+1}. {elems[f]} ({importances[indices[f]]})")
 
-figure()
+figure(figure(figsize=(8,5)))
 plot_horizontal_bar_chart(
     elems,
     imp_values,
@@ -89,6 +90,7 @@ plot_horizontal_bar_chart(
     ylabel="variables",
     percentage=True,
 )
+tight_layout()
 savefig(f"images/{file_tag}_dt_{eval_metric}_vars_ranking.png")
 
 # ---------- Overfitting study ----------

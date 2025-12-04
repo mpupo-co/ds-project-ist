@@ -58,7 +58,6 @@ def trees_study(
 trnX, tstX, trnY, tstY = train_test_split(X, y, train_size=0.7, stratify=y, random_state=42)
 
 # ---------- Models' Comparision ----------
-
 eval_metric = metrics[0]
 figure()
 best_model, params = trees_study(trnX, trnY, tstX, tstY, d_max=20, metric=eval_metric)
@@ -117,3 +116,28 @@ plot_multiline_chart(
     percentage=True,
 )
 savefig(f"images/{file_tag}_dt_{eval_metric}_overfitting.png")
+
+#--------------- Plot best tree -----------------
+
+from sklearn.tree import plot_tree
+from sklearn.tree import export_graphviz
+from matplotlib.pyplot import imread, imshow, axis
+from subprocess import call
+
+
+tree_filename: str = f"images/{file_tag}_dt_{metrics[0]}_best_tree"
+max_depth2show = 3
+st_labels: list[str] = [str(value) for value in labels]
+
+figure(figsize=(14, 6))
+plot_tree(
+    best_model,
+    max_depth=max_depth2show,
+    feature_names=vars,
+    class_names=st_labels,
+    filled=True,
+    rounded=True,
+    impurity=False,
+    precision=2,
+)
+savefig(tree_filename + ".png")

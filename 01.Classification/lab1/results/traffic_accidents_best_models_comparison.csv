@@ -1,0 +1,6 @@
+Model,Best_Params,Accuracy,Precision,Recall
+Naive Bayes,(),0.8287,0.8688,0.8287
+Logistic Regression,"('l1', 250)",0.8277,0.8683,0.8277
+KNN,"(19, 'manhattan')",0.7978,0.8385,0.7978
+Decision Tree,"('entropy', 4)",0.8331,0.8685,0.8331
+MLP,"('constant', 0.05, 250)",0.8315,0.869,0.8315

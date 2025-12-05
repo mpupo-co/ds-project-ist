@@ -1,5 +1,4 @@
-# ds-project-ist @ IST 
-Data Science course Project - IST 25/26
+# ds-project-ist @ IST Data Science course 25/26 
 
 ## 1\. Overview
 The project consists of performing the first iteration of the KDD process, when training

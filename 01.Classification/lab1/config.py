@@ -5,7 +5,7 @@ from cycler import cycler
 
 # _________________________________________ STYLE ____________________________________________________
 simplefilter("ignore")
-style.use("dslabs.mplstyle")
+style.use("../dslabs.mplstyle")
 
 HATCHES = [".", "..", "...", "o"]  # ['/', '+', 'X', '*'] #'oo', 'OO', '..'
 

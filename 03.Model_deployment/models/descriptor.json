@@ -1,0 +1,16 @@
+{
+    "pipeline": "pipeline.joblib",
+    "models": [
+    {
+        "name": "dt",
+        "file": "model_dt.joblib",
+        "hyperparams": "hyperparams_dt.json"
+    },
+    {
+        "name": "mlp",
+        "file": "model_mlp.joblib",
+        "hyperparams": "hyperparams_mlp.json"
+    }
+    ],
+    "default_model": "dt"
+}

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+   </head>
+   <body>
+    <h2>Perform a single model prediction</h2>
+      <form id="predictForm" enctype="multipart/form-data">
+         <label for="model-select">Choose the desired model</label>
+         <select id="model-select" name="model" disabled>
+            <option value="">Loading models...</option>
+         </select><br><br>
+         <label for="csvFileSingle">Choose a CSV file</label>
+         <input type="file" id="csvFileSingle" name="file" onchange="toggleSubmit('submitPredict');"><br><br>
+         <input type="submit" id="submitPredict" value="submit" disabled>
+      </form>
+      <pre id="predictResponse"></pre>
+    <h2>Upload a dataset for model evaluation</h2>
+      <form id="evaluateForm" enctype="multipart/form-data">
+         <label for="csvFileEval">Choose a CSV file</label>
+         <input type="file" id="csvFileEval" name="file" onchange="toggleSubmit('submitEval');"><br><br>
+         <input type="submit" id="submitEval" value="submit" disabled>
+      </form>
+      <pre id="evaluateResponse"></pre>
+      <script>
+         async function populateModels() {
+            try {
+               const response = await fetch('/api/models');
+               const data = await response.json();
+               const select = document.getElementById('model-select');
+               select.innerHTML = '';
+               data.models.forEach((name) => {
+                  const option = document.createElement('option');
+                  option.value = name;
+                  option.textContent = name;
+                  select.appendChild(option);
+               });
+               select.disabled = false;
+            } catch (error) {
+               console.error('Failed to load models', error);
+               const select = document.getElementById('model-select');
+               select.innerHTML = '<option value="">Unable to load models</option>';
+            }
+         }
+
+         function toggleSubmit(buttonId) {
+            document.getElementById(buttonId).removeAttribute('disabled');
+         }
+
+         async function handleFormSubmit(event, url, responseElementId) {
+            event.preventDefault();
+            const form = event.target;
+            const responseContainer = document.getElementById(responseElementId);
+            const formData = new FormData(form);
+            responseContainer.textContent = 'Submitting...';
+            try {
+               const response = await fetch(url, {
+                  method: 'POST',
+                  body: formData,
+               });
+               const data = await response.json();
+               responseContainer.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+               console.error('Submission failed', error);
+               responseContainer.textContent = 'Error: unable to submit form.';
+            }
+         }
+
+         document.addEventListener('DOMContentLoaded', () => {
+            populateModels();
+            document.getElementById('predictForm').addEventListener('submit', (event) =>
+               handleFormSubmit(event, '/api/predict-single', 'predictResponse')
+            );
+            document.getElementById('evaluateForm').addEventListener('submit', (event) =>
+               handleFormSubmit(event, '/api/evaluate-models', 'evaluateResponse')
+            );
+         });
+      </script>
+   </body>
+</html>

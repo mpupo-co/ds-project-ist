@@ -1,0 +1,11 @@
+fastapi
+pandas>=2.0.3
+joblib
+scikit-learn>=1.4,<1.6
+uvicorn
+python-multipart
+matplotlib
+statsmodels
+imbalanced-learn>=0.13,<0.15
+numpy
+jinja2

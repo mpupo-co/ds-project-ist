@@ -1,0 +1,36 @@
+{
+    "pipeline": "pipeline_cf.joblib",
+    "models": [
+        {
+            "name": "nb",
+            "file": "model_nb_cf.joblib",
+            "hyperparams": "hyperparams_nb_cf.json"
+        },
+        {
+            "name": "knn",
+            "file": "model_knn_cf.joblib",
+            "hyperparams": "hyperparams_knn_cf.json"
+        },
+        {
+            "name": "dt",
+            "file": "model_dt_cf.joblib",
+            "hyperparams": "hyperparams_dt_cf.json"
+        },
+        {
+            "name": "rf",
+            "file": "model_rf_cf.joblib",
+            "hyperparams": "hyperparams_rf_cf.json"
+        },
+        {
+            "name": "mlp",
+            "file": "model_mlp_cf.joblib",
+            "hyperparams": "hyperparams_mlp_cf.json"
+        },
+        {
+            "name": "gb",
+            "file": "model_gb_cf.joblib",
+            "hyperparams": "hyperparams_gb_cf.json"
+        }
+    ],
+    "default_model": "nb"
+}

@@ -1,15 +1,22 @@
-from fastapi import UploadFile, HTTPException
-import pandas as pd
+from __future__ import annotations
+
 from io import StringIO
 import time
+from typing import TYPE_CHECKING, Dict, List
 
-def _log_stage(name, start_time):
+import pandas as pd
+from fastapi import HTTPException, UploadFile
+
+if TYPE_CHECKING:
+    from model_registry import ModelRegistry
+
+def _log_stage(name: str, start_time: float) -> None:
     duration = time.perf_counter() - start_time
     print(f"[pipeline] {name} took {duration:.2f}s")
 
 def single_prediction(file: UploadFile,
                       model_name: str | None,
-                      registry) -> dict:
+                      registry: "ModelRegistry") -> Dict[str, object]:
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported")
 
@@ -19,11 +26,11 @@ def single_prediction(file: UploadFile,
     if df.shape[0] != 1:
         raise HTTPException(status_code=400, detail="Only single record prediction is supported")
 
-    result = registry.predict(df, model_name)
-    return result
+    return registry.predict(df, model_name)
 
 def model_evaluation(file: UploadFile,
-                     registry) -> list[dict]:
+                     registry: "ModelRegistry",
+                     target: str = "Cancelled") -> List[Dict[str, object]]:
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported")
     
@@ -31,8 +38,6 @@ def model_evaluation(file: UploadFile,
     content = file.file.read().decode("utf-8")
     df = pd.read_csv(StringIO(content))
     _log_stage("Loading evaluation dataset", t0)
-    target = "crash_type"
     if target not in df.columns:
         raise HTTPException(status_code=400, detail=f"Target column '{target}' not found in dataset")
-    results = registry.evaluate(df, target=target)
-    return results
+    return registry.evaluate(df, target=target)

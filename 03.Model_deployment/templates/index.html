@@ -3,27 +3,61 @@
    <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Prediction Server (Combined Flights)</title>
+      <link rel="stylesheet" href="/static/styles.css">
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
    </head>
    <body>
-    <h2>Perform a single model prediction</h2>
-      <form id="predictForm" enctype="multipart/form-data">
-         <label for="model-select">Choose the desired model</label>
-         <select id="model-select" name="model" disabled>
-            <option value="">Loading models...</option>
-         </select><br><br>
-         <label for="csvFileSingle">Choose a CSV file</label>
-         <input type="file" id="csvFileSingle" name="file" onchange="toggleSubmit('submitPredict');"><br><br>
-         <input type="submit" id="submitPredict" value="submit" disabled>
-      </form>
-      <pre id="predictResponse"></pre>
-    <h2>Upload a dataset for model evaluation</h2>
-      <form id="evaluateForm" enctype="multipart/form-data">
-         <label for="csvFileEval">Choose a CSV file</label>
-         <input type="file" id="csvFileEval" name="file" onchange="toggleSubmit('submitEval');"><br><br>
-         <input type="submit" id="submitEval" value="submit" disabled>
-      </form>
-      <pre id="evaluateResponse"></pre>
+      <div class="dashboard">
+         <header>
+            <h1>Prediction Server (Combined Flights)</h1>
+            <p>Upload your CSVs, pick a trained model, and inspect the predictions in real time.</p>
+         </header>
+         <div class="grid">
+            <div class="card">
+               <div>
+                  <h2>Single Prediction</h2>
+                  <p class="helper-text">Choose a trained model and upload exactly one record.</p>
+               </div>
+               <form id="predictForm" enctype="multipart/form-data">
+                  <div>
+                     <label for="model-select">Model</label>
+                     <select id="model-select" name="model" disabled>
+                        <option value="">Loading models...</option>
+                     </select>
+                  </div>
+                  <div>
+                     <label for="csvFileSingle">CSV file</label>
+                     <input type="file" id="csvFileSingle" name="file" accept=".csv" onchange="toggleSubmit('submitPredict');">
+                  </div>
+                  <button type="submit" style="margin-top: 14px;" id="submitPredict" disabled>Predict</button>
+               </form>
+               <div class="response" id="predictResponse">
+                  <p class="placeholder-text">Awaiting input...</p>
+               </div>
+            </div>
+
+            <div class="card">
+               <div>
+                  <h2>Batch Evaluation</h2>
+                  <p class="helper-text">Upload a validation dataset and compare metrics across models.</p>
+               </div>
+               <form id="evaluateForm" enctype="multipart/form-data">
+                  <div>
+                     <label for="csvFileEval">CSV file</label>
+                     <input type="file" id="csvFileEval" name="file" accept=".csv" onchange="toggleSubmit('submitEval');">
+                  </div>
+                  <button type="submit" style="margin-top: 14px;" id="submitEval" disabled>Evaluate</button>
+               </form>
+               <div class="evaluation-results" id="evaluateResponse">
+                  <p class="placeholder-text">Awaiting evaluation...</p>
+               </div>
+            </div>
+         </div>
+      </div>
       <script>
+         let evaluationChart = null;
+
          async function populateModels() {
             try {
                const response = await fetch('/api/models');
@@ -60,11 +94,157 @@
                   body: formData,
                });
                const data = await response.json();
-               responseContainer.textContent = JSON.stringify(data, null, 2);
+               if (response.ok) {
+                  if (responseElementId === 'predictResponse' && Object.prototype.hasOwnProperty.call(data, 'prediction')) {
+                     const label = Number(data.prediction) === 1 ? 'Cancelled' : 'Not Cancelled';
+                     responseContainer.textContent = `${label}`;
+                  } else if (responseElementId === 'evaluateResponse') {
+                     renderEvaluationResults(data, responseContainer);
+                  } else {
+                     responseContainer.textContent = JSON.stringify(data, null, 2);
+                  }
+               } else {
+                  responseContainer.textContent = data?.detail ?? 'Error: request failed.';
+               }
             } catch (error) {
                console.error('Submission failed', error);
                responseContainer.textContent = 'Error: unable to submit form.';
             }
+         }
+
+         function formatHyperparams(hyperparams) {
+            if (!hyperparams || typeof hyperparams !== 'object') {
+               return '<p class="helper-text">No hyperparameters provided.</p>';
+            }
+            return Object.entries(hyperparams)
+               .map(([key, value]) => {
+                  const formattedValue = formatHyperparamValue(value);
+                  return `<div class="hyperparam-row"><span>${key}</span><span>${formattedValue}</span></div>`;
+               })
+               .join('');
+         }
+
+         function formatHyperparamValue(value) {
+            if (Array.isArray(value)) {
+               return value.join(', ');
+            }
+            if (typeof value === 'number') {
+               return Number.isInteger(value) ? value.toString() : value.toFixed(3);
+            }
+            if (value && typeof value === 'object') {
+               return JSON.stringify(value);
+            }
+            return String(value);
+         }
+
+         function renderEvaluationResults(payload, container) {
+            const results = payload?.results;
+            if (evaluationChart) {
+               evaluationChart.destroy();
+               evaluationChart = null;
+            }
+
+            container.innerHTML = '';
+
+            if (!Array.isArray(results) || !results.length) {
+               container.insertAdjacentHTML('afterbegin', '<p class="placeholder-text">No evaluation metrics returned.</p>');
+               return;
+            }
+
+            const chartWrapper = document.createElement('div');
+            chartWrapper.className = 'chart-wrapper';
+            const canvas = document.createElement('canvas');
+            chartWrapper.appendChild(canvas);
+            container.appendChild(chartWrapper);
+
+            const hyperparamsGrid = document.createElement('div');
+            hyperparamsGrid.className = 'hyperparams-grid';
+            container.appendChild(hyperparamsGrid);
+
+            const metricSet = new Set();
+            results.forEach((result) => {
+               Object.keys(result?.scores ?? {}).forEach((metric) => metricSet.add(metric));
+            });
+            const metrics = Array.from(metricSet);
+
+            const datasets = results.map((result, index) => {
+               const color = getColorForIndex(index);
+               return {
+                  label: result?.model ? result.model.toUpperCase() : `MODEL ${index + 1}`,
+                  data: metrics.map((metric) => {
+                     const values = Array.isArray(result?.scores?.[metric]) ? result.scores[metric] : [];
+                     if (!values.length) return 0;
+                     const avg = values.reduce((sum, value) => sum + Number(value || 0), 0) / values.length;
+                     return Number((avg * 100).toFixed(2));
+                  }),
+                  backgroundColor: color,
+                  borderRadius: 6,
+               };
+            });
+
+            evaluationChart = new Chart(canvas.getContext('2d'), {
+               type: 'bar',
+               data: {
+                  labels: metrics,
+                  datasets,
+               },
+               options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                     y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                           callback: (value) => `${value}%`,
+                        },
+                        grid: {
+                           color: 'rgba(255, 255, 255, 0.08)',
+                        },
+                     },
+                     x: {
+                        ticks: {
+                           color: '#c9cbe0',
+                        },
+                        grid: {
+                           display: false,
+                        },
+                     },
+                  },
+                  plugins: {
+                     legend: {
+                        position: 'top',
+                        labels: {
+                           color: '#f6f7fb',
+                        },
+                     },
+                     tooltip: {
+                        callbacks: {
+                           label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`,
+                        },
+                     },
+                  },
+               },
+            });
+
+            results.forEach((result, index) => {
+               const hyperparamBlock = document.createElement('div');
+               hyperparamBlock.className = 'hyperparams';
+               hyperparamBlock.innerHTML = `<p class="hyperparams-title">${result?.model ? result.model.toUpperCase() : `MODEL ${index + 1}`}</p>` + formatHyperparams(result.hyperparams);
+               hyperparamsGrid.appendChild(hyperparamBlock);
+            });
+         }
+
+         function getColorForIndex(index) {
+            const palette = [
+               'rgba(106, 211, 245, 0.85)',
+               'rgba(245, 167, 106, 0.85)',
+               'rgba(157, 162, 197, 0.85)',
+               'rgba(122, 236, 203, 0.85)',
+               'rgba(255, 140, 189, 0.85)',
+               'rgba(255, 214, 102, 0.85)',
+            ];
+            return palette[index % palette.length];
          }
 
          document.addEventListener('DOMContentLoaded', () => {

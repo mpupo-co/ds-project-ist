@@ -29,7 +29,7 @@ from sklearn.metrics import confusion_matrix, RocCurveDisplay, roc_auc_score
 from sklearn.naive_bayes import _BaseNB, GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.neighbors import KNeighborsClassifier
 
-from config import (
+from utils.config import (
     ACTIVE_COLORS,
     LINE_COLOR,
     FILL_COLOR,

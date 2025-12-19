@@ -1,0 +1,9 @@
+{
+  "name": "MLP",
+  "metric": "accuracy",
+  "learning_rate": "constant",
+  "learning_rate_init": 0.5,
+  "max_iter": 250,
+  "activation": "logistic",
+  "solver": "sgd"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "DT",
+  "metric": "accuracy",
+  "criterion": "entropy",
+  "max_depth": 8
+}

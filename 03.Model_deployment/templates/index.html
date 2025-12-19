@@ -3,14 +3,14 @@
    <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Prediction Server (Combined Flights)</title>
+      <title>Prediction Server ({{ project_name }})</title>
       <link rel="stylesheet" href="/static/styles.css">
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
    </head>
    <body>
       <div class="dashboard">
          <header>
-            <h1>Prediction Server (Combined Flights)</h1>
+            <h1>Prediction Server ({{ project_name }})</h1>
             <p>Upload your CSVs, pick a trained model, and inspect the predictions in real time.</p>
          </header>
          <div class="grid">
@@ -56,6 +56,7 @@
          </div>
       </div>
       <script>
+         const TEMPLATE_TARGET = "{{ target | default('') }}";
          let evaluationChart = null;
 
          async function populateModels() {
@@ -82,7 +83,19 @@
             document.getElementById(buttonId).removeAttribute('disabled');
          }
 
-         async function handleFormSubmit(event, url, responseElementId) {
+         function getLabelFromPrediction(prediction, targetValue = TEMPLATE_TARGET) {
+            if (targetValue === 'Cancelled') {
+               return Number(prediction) === 1 ? 'Cancelled' : 'Not Cancelled';
+            }
+            else if (targetValue === 'crash_type') {
+               return Number(prediction) === 1 ? 'Crashed' : 'Did Not Crash';
+            }
+            else {
+               return 'Unknown Target';
+            }
+         }
+
+         async function handleFormSubmit(event, url, responseElementId, targetValue = TEMPLATE_TARGET) {
             event.preventDefault();
             const form = event.target;
             const responseContainer = document.getElementById(responseElementId);
@@ -96,7 +109,7 @@
                const data = await response.json();
                if (response.ok) {
                   if (responseElementId === 'predictResponse' && Object.prototype.hasOwnProperty.call(data, 'prediction')) {
-                     const label = Number(data.prediction) === 1 ? 'Cancelled' : 'Not Cancelled';
+                     const label = getLabelFromPrediction(data.prediction, targetValue);
                      responseContainer.textContent = `${label}`;
                   } else if (responseElementId === 'evaluateResponse') {
                      renderEvaluationResults(data, responseContainer);
@@ -250,10 +263,10 @@
          document.addEventListener('DOMContentLoaded', () => {
             populateModels();
             document.getElementById('predictForm').addEventListener('submit', (event) =>
-               handleFormSubmit(event, '/api/predict-single', 'predictResponse')
+               handleFormSubmit(event, '/api/predict-single', 'predictResponse', TEMPLATE_TARGET)
             );
             document.getElementById('evaluateForm').addEventListener('submit', (event) =>
-               handleFormSubmit(event, '/api/evaluate-models', 'evaluateResponse')
+               handleFormSubmit(event, '/api/evaluate-models', 'evaluateResponse', TEMPLATE_TARGET)
             );
          });
       </script>

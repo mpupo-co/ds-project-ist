@@ -7,8 +7,8 @@ from model_registry import ModelRegistry
 from helper import single_prediction, model_evaluation
 
 BASE_DIR = Path(__file__).resolve().parent
-DESCRIPTOR_PATH = BASE_DIR / "models" / "descriptor_cf.json"
-TARGET_COLUMN = "Cancelled"
+DESCRIPTOR_PATH = BASE_DIR / "models" / "descriptor_ta.json"
+TARGET_COLUMN = "crash_type"
 
 templates = Jinja2Templates(directory=str(BASE_DIR / 'templates'))
 
@@ -27,7 +27,8 @@ def get_registry(request: Request) -> ModelRegistry:
 
 @app.get("/")
 def index(request: Request):
-    return templates.TemplateResponse('index.html', {'request': request})
+    return templates.TemplateResponse('index.html', 
+    {'request': request, 'project_name': 'Traffic Accidents', 'target': TARGET_COLUMN })
 
 @app.get("/api/models")
 def read_models(registry: ModelRegistry = Depends(get_registry)):

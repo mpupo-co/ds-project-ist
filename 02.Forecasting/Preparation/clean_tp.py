@@ -36,34 +36,13 @@ data['datetime'] = pd.to_datetime({
 # Make this time series index
 data.set_index('datetime', inplace=True)
 
-# drop helper columns
-data.drop(columns=['Time', 'month_block'], inplace=True)
+# drop columns
+data.drop(columns=['Time', 'month_block', 'Date', 'Day of the week', 'Traffic Situation'], inplace=True)
 
-# ---- Encode symbolic variables ----
+
 print("Nr. Records = ", data.shape)
 print("First timestamp", data.index[0])
 print("Last timestamp", data.index[-1])
-
-weekdays_enc:dict[str, int] = {
-    'Monday':1,
-    'Tuesday':2,
-    'Wednesday':3,           
-    'Thursday':4,
-    'Friday':5, 
-    'Saturday':6,
-    'Sunday':7
-    }
-traf_status_enc: dict[str, int] = {
-    'heavy':1,                   
-    'high':2,                   
-    'normal':3,               
-    'low':4               
-    }
-encode: dict[str, dict] = {
-    'Day of the week':weekdays_enc,
-    'Traffic Situation': traf_status_enc
-    }
-data = data.replace(encode)
 
 # ----  Create/ save the encoded dataset in a csv file ----
 data.to_csv(f'datasets/{file_tag}_clean.csv', index=True)
